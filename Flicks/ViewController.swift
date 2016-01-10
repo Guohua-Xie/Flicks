@@ -10,7 +10,10 @@ import UIKit
 import AFNetworking
 
 class ViewController: UIViewController {
-    let totalMovies: Int = 100
+  //  let totalMovies: Int = 100
+   
+    @IBOutlet weak var searchBar: UISearchBar!
+    
     var movies: [NSDictionary]?
     
     @IBOutlet weak var collectionView: UICollectionView!
