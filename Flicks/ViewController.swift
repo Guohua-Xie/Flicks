@@ -9,8 +9,7 @@
 import UIKit
 import AFNetworking
 
-class ViewController: UIViewController {
-  //  let totalMovies: Int = 100
+class ViewController: UIViewController,UICollectionViewDataSource, UISearchBarDelegate {
    
     @IBOutlet weak var searchBar: UISearchBar!
     
@@ -23,32 +22,17 @@ class ViewController: UIViewController {
         // Do any additional setup after loading the view, typically from a nib.
         
          collectionView.dataSource = self
-        collectionView.delegate = self
+//       collectionView.delegate = self
         loadData()
     }
-
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
 
-//
-//    func movieForIndexPath(indexPath: NSIndexPath) -> UIColor {
-//        if indexPath.row >= totalMovies {
-//            return UIColor.blackColor()	// return black if we get an unexpected row index
-//        }
-//        
-//        var hueValue: CGFloat = CGFloat(indexPath.row) / CGFloat(totalMovies)
-//        return UIColor(hue: hueValue, saturation: 1.0, brightness: 1.0, alpha: 1.0)
-//    }
-
-
 
     func loadData() {
-        
-        
-        
-        
+ 
         
         let apiKey = "a07e22bc18f5cb106bfe4cc1f83ad8ed"
         let url = NSURL(string:"https://api.themoviedb.org/3/movie/now_playing?api_key=\(apiKey)")
@@ -76,16 +60,7 @@ class ViewController: UIViewController {
         
         
     }
-}
 
-
-
-
-
-
-
-
-extension ViewController: UICollectionViewDataSource {
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         
         if let movies = movies {
@@ -96,34 +71,23 @@ extension ViewController: UICollectionViewDataSource {
             
         }
     }
-    
- 
         
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
             
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("com.Davis.MovieCell", forIndexPath: indexPath) as! MovieCell
-            let movie = movies![indexPath.row]
-            let title = movie["title"] as! String
+        let movie = movies![indexPath.row]
+        let title = movie["title"] as! String
         
         
-           let posterPath = movie["poster_path"] as! String
-           let baseUrl = "http://image.tmdb.org/t/p/w500"
-           let imageUrl = NSURL(string: baseUrl + posterPath)
+        let posterPath = movie["poster_path"] as! String
+        let baseUrl = "http://image.tmdb.org/t/p/w500"
+        let imageUrl = NSURL(string: baseUrl + posterPath)
         
         
          cell.titleLabel.text = title 
          cell.posterView.setImageWithURL(imageUrl!)
-        
-        
-        
-        
-        return cell
+         return cell
     }
-}
 
-
-extension ViewController: UICollectionViewDelegate {
-    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        print("Selected cell number: \(indexPath)")
-    }
+    
 }
