@@ -8,86 +8,103 @@
 
 import UIKit
 import AFNetworking
+import Foundation
+import SystemConfiguration
 
-class ViewController: UIViewController {
-  //  let totalMovies: Int = 100
-   
-    @IBOutlet weak var searchBar: UISearchBar!
-    
-    var movies: [NSDictionary]?
-    
+class ViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UISearchBarDelegate, UISearchDisplayDelegate {
+  
+    @IBOutlet var networkError: UIImageView!
     @IBOutlet weak var collectionView: UICollectionView!
+    var movies: [NSDictionary]?
+    var movie = NSDictionary()
+    var refreshControl: UIRefreshControl!
+    var netInfo : NSString = ""
+    
+   
     override func viewDidLoad() {
         super.viewDidLoad()
+                networkError.hidden = true
+                collectionView.dataSource = self
+                collectionView.delegate = self
+         loadData()
+
+  NSNotificationCenter.defaultCenter().addObserver(self,selector: Selector("networkStatusChanged:"), name: ReachabilityStatusChangedNotification, object: nil)
         
-        // Do any additional setup after loading the view, typically from a nib.
+        refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: "onRefresh", forControlEvents: UIControlEvents.ValueChanged)
+        collectionView.insertSubview(refreshControl, atIndex: 0)
+        collectionView.reloadData()
         
-         collectionView.dataSource = self
-        collectionView.delegate = self
-        loadData()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
-//
-//    func movieForIndexPath(indexPath: NSIndexPath) -> UIColor {
-//        if indexPath.row >= totalMovies {
-//            return UIColor.blackColor()	// return black if we get an unexpected row index
-//        }
-//        
-//        var hueValue: CGFloat = CGFloat(indexPath.row) / CGFloat(totalMovies)
-//        return UIColor(hue: hueValue, saturation: 1.0, brightness: 1.0, alpha: 1.0)
-//    }
+  
+    
+    
 
 
 
     func loadData() {
-        
-        
-        
-        
-        
-        let apiKey = "a07e22bc18f5cb106bfe4cc1f83ad8ed"
-        let url = NSURL(string:"https://api.themoviedb.org/3/movie/now_playing?api_key=\(apiKey)")
-        let request = NSURLRequest(URL: url!)
-        let session = NSURLSession(
-            configuration: NSURLSessionConfiguration.defaultSessionConfiguration(),
-            delegate:nil,
-            delegateQueue:NSOperationQueue.mainQueue()
-        )
-        
-        let task : NSURLSessionDataTask = session.dataTaskWithRequest(request,
-            completionHandler: { (dataOrNil, response, error) in
-                if let data = dataOrNil {
-                    if let responseDictionary = try! NSJSONSerialization.JSONObjectWithData(
-                        data, options:[]) as? NSDictionary {
-                            NSLog("response: \(responseDictionary)")
-                            
-                            self.movies = responseDictionary ["results"] as! [NSDictionary]
-                            self.collectionView.reloadData()
+            
+            let apiKey = "a07e22bc18f5cb106bfe4cc1f83ad8ed"
+            let url = NSURL(string:"https://api.themoviedb.org/3/movie/now_playing?api_key=\(apiKey)")
+            let request = NSURLRequest(URL: url!)
+            let session = NSURLSession(
+                configuration: NSURLSessionConfiguration.defaultSessionConfiguration(),
+                delegate:nil,
+                delegateQueue:NSOperationQueue.mainQueue()
+            )
+            
+            let task : NSURLSessionDataTask = session.dataTaskWithRequest(request,
+                completionHandler: { (dataOrNil, response, error) in
+                    if let data = dataOrNil {
+                        if let responseDictionary = try! NSJSONSerialization.JSONObjectWithData(
+                            data, options:[]) as? NSDictionary {
+                                NSLog("response: \(responseDictionary)")
+                                
+                                self.movies = responseDictionary ["results"] as! [NSDictionary]
+                                self.collectionView.reloadData()
+                        }
                     }
-                }
-        });
-        task.resume()
+            });
+            task.resume()
+            
+            
+            
+        }
+    
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+   let currentObject1 = movies![indexPath.row]
         
-        
-        
+        performSegueWithIdentifier("showMovieDetail", sender: currentObject1)
     }
-}
-
-
-
-
-
-
-
-
-extension ViewController: UICollectionViewDataSource {
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    
+    
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         
+        var currentObject1 : NSDictionary?
+        if let movie = sender as? NSDictionary
+        {
+            currentObject1 = sender as? NSDictionary
+        } else
+        {
+            
+        }
+        
+        // Get a handle on the next story board controller and set the currentObject ready for the viewDidLoad method
+        var detailScene = segue.destinationViewController as! DetailMovieViewController
+        detailScene.currentObject1 = (currentObject1)
+    }
+
+
+
+    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+
+        
+  
         if let movies = movies {
             return movies.count
         } else {
@@ -119,11 +136,43 @@ extension ViewController: UICollectionViewDataSource {
         
         return cell
     }
+
+
+
+
+    
+    func networkStatusChanged(notification: NSNotification) {
+            let userInfo = notification.userInfo
+           
+            netInfo = userInfo! ["Status"] as! NSString
+            if netInfo == "Online (WiFi)" {
+               networkError.hidden = true
+            } else {
+            networkError.hidden = false
+     
 }
-
-
-extension ViewController: UICollectionViewDelegate {
-    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        print("Selected cell number: \(indexPath)")
+            
+}
+    
+    
+    func onRefresh() {
+        
+        delay(2, closure: {
+            self.refreshControl.endRefreshing()
+        })
+        Reach().monitorReachabilityChanges()
     }
+    
+    
+    func delay(delay:Double, closure:()->()) {
+        dispatch_after(
+            dispatch_time(
+                DISPATCH_TIME_NOW,
+                Int64(delay * Double(NSEC_PER_SEC))
+            ),
+            dispatch_get_main_queue(), closure)
+    }
+
+
+
 }
